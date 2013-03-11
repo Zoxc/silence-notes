@@ -1,0 +1,323 @@
+Functions:
+	Inferred types:
+		factorial(i)
+		{
+			return case i
+			{
+				0: 1
+				else factorial(i) * i
+			}
+		}
+	
+	Explicit types:
+		factorial(i: int): int
+		{
+			return case i
+			{
+				0: 1
+				else factorial(i) * i
+			}
+		}
+			
+	External:
+		import("malloc") alloc(): ^unit
+		import free(mem: ^unit): unit
+
+Loops:
+	While:
+		times(n, f)
+		{
+			i := 0 // declare and assign a variable
+			while i < n
+			{
+				f()
+				i += 1
+			}
+		}
+		
+Datatypes:
+	Booleans:
+		b: bool = true || false
+		
+	Builtin-integers:
+		byte, int8 // 8-bit signed
+		ubyte, uint8 // 8-bit unsigned
+		int16 // 16-bit signed
+		uint16 // 16-bit unsigned
+		short, int32 // 32-bit signed
+		ushort, uint32 // 32-bit unsigned
+		int // signed pointer sized
+		uint // unsigned pointer sized
+		long // signed 2x pointer sized
+		ulong // unsigned 2x pointer sized
+		
+		char // alias of ubyte, represents an utf-8 byte
+		
+	Type alias:
+		type centimeter: int
+		
+	Record type:
+		Named fields:
+			struct Rectangle
+			{
+				width: int
+				height: int = 4 // Direct initializers
+			}
+			
+	Enum:
+		data Shape = Circle | Rectangle | Triangle
+		
+	Sets:
+		set Flags
+		{
+			Up
+			Down
+			Blue
+		}
+		
+		v: Flags = {Flags.Up, Flags.Down}
+		
+		v -= {Flags.Up} // Set relative complement
+		v |= {Flags.Up} // Set union
+		v &= {Flags.Up} // Set intersection
+		
+		if Flags.Up in v 
+			print "Up is set"
+		
+	Pointers:
+		not_nullable: *int
+		nullable: ^int // a union type of *int and nil
+		
+		struct_ptr: *Struct
+		struct_ptr.field = value // no need to dereference field acceses
+		
+	Field pointers:
+		field_ptr: *Struct.field
+		field_ptr(struct) = 2
+		
+	Function pointers:
+		func_ptr: *(i: int): unit
+		func_ptr(4)
+	
+	Closures:
+		closure: ~(int): unit = (i: int){ print(i) }
+		closure(4)
+	
+	Untagged union:
+		union Integer
+		{
+			Signed: int
+			Unsigned: uint
+		}
+	
+	Tagged union:
+		No default constructors, constructors generated implicitly which initializes all fields.
+		The type itself cannot be passed or created by value, only the cases can. It can however be passed by pointers.
+		
+		union Tree
+		{
+			field: int // shared by all cases
+			
+			when Leaf
+			{
+				print()
+				{
+					return "Leaf"
+				}
+			}
+			
+			when Branch
+			{
+				left: *Tree
+				right: *Tree
+				
+				print()
+				{
+					return "(" + left.print() + ", " + right.print() + ")"
+				}
+			}
+			
+			when SpecialBranch: Branch
+			{
+				really_special: bool
+				
+				print()
+				{
+					return ("Really" if really_special) + "Special - " + super.print_case()
+				}
+			}
+		}
+	
+Type conversions?
+	struct A
+	{
+		coerce B // Type A can be used as type B. A is a B.
+		{
+			B result
+			b.field = this.field
+			return b
+		}
+	}
+
+Cast operator:
+	a = cast 6 // explicit conversion to the type of a
+	a := 4 as uint // explicit conversion to uint
+	
+Inheritance:
+	struct Animal
+	{
+		abstract talk(): string
+		virtual walk(): unit
+		{
+		}
+	}
+	
+	struct Dog: Animal
+	{
+		override talk()
+		{
+			return "Woof!"
+		}
+		
+		override walk()
+		{
+			super.walk()
+		}
+	}
+	
+Constructors:
+	struct Foo
+	{
+		field: *Struct
+		inline: Struct
+		
+		constructor :
+			field(new Struct) // base constructor, inline's base constructor called implicitly
+		{
+		}
+		
+		constructor named(i) :
+			inline.named(i),
+			field(new Struct.named(i)) // base constructor called implicitly with overrides for specified fields
+		{
+		}
+		
+		operator copy() // Fields are copied implicitly
+		{
+			field = new Struct(*field)
+		}
+		
+		destructor
+		{
+			delete field
+		}
+	}
+	
+	A copy operator cannot exists without a destructor. If there's a destructor, but no copy operator, the struct is not copyable.
+	
+Visibility:
+	struct A // It works for modules too
+	{
+	public: // Public is the default visibility
+	protected:
+	private:
+		friend B // B can access everything in A
+	}
+	
+Properties:
+	struct Window
+	{
+		property visible: Bool get private_visible set set_visible
+		
+	private:
+		set_visible(value)
+		{
+			private_visible = value
+		}
+		
+		private_visible: Bool
+	}
+	
+Arrays:
+	array_of_3_ints: [3:int]
+	array_of_5_array_of_3_ints: [5:[3:int]]
+	array_of_4_pointers_to_array_of_2_ints: [4:*[2:int]]
+	pointer_to_array_of_n_ints: *[int]
+	
+Postfix keywords:
+	return 2 if true
+	
+Exceptions:
+	a: int
+	try
+	{
+		a = 0
+		raise Exception()
+	}
+	catch(e: Exception const)
+		a = 1
+	finally
+		a = 2
+
+Manual memory management:
+	ptr: *Struct
+	ptr = new Struct
+	delete ptr
+
+Templates:
+	Records:
+		struct Vector(T, Allocator = nil)
+		{
+			allocator: Allocator if Allocator
+			array: ^[T]
+			size: uint
+		}
+		
+		Ints: Vector(int)
+		
+	Functions:
+		create(T)()
+		{
+			return new T
+		}
+		
+		// Both creates ints
+		a := create!int()
+		a = create() // infers the type of T
+		
+		create(A, B)(func: (A, B))
+		{
+			return func(A(), B())
+		}
+			
+		create!(byte, int)(func) // explicit
+		create(func) // inferred types
+
+		wrapper([Args])(func: ([Args]))
+		{
+			return func([Args()])
+		}
+		
+		wrapper(func) // call func with default 
+
+Namespaces: (one per file?)
+	module A
+	{
+		module B
+		{
+			var: int;
+		}
+		
+		setVarInB()
+		{
+			B.var = 3
+		}
+	};
+	
+	uses A // Imports the A module
+	
+Mixins:
+	mixin "a := 1" // Equivalent to 'a := 1'
+	
+	func()
+		mixin "return 1" // Equivalent to 'return 1'

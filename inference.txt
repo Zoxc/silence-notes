@@ -1,0 +1,80 @@
+Handle mutual recursion with type inference:
+Walk functions depth first flagging them on entry and exiting if the flag is set.
+If a function (A) calls a function in the stack (B) (we can check for this easily using the flag), All the functions from A upto B will be added to a shared linked list.
+
+We can then detect functions which require type inference to by executed on all simultaneously.
+
+On exit, process the function with the call sites simultaneously.
+
+a(v) { return b<typeof v>(v); }
+b<T>(v) { T t; return a(v); }
+
+wrap(A...)(f, A a) {
+	f(a...)
+}
+
+a = b
+b = c
+c = d
+d = a
+
+func(a, b)
+{
+	a := A()
+	a = B()
+	return a
+}
+
+func(A, B)()
+{
+	a := A()
+	a = B()
+	return a
+}
+
+map<List, InElement, OutElement>(list: List<InElement>, func: (element: InElement): OutElement): List<OutElement>
+{
+	result: List<OutElement> 
+	
+	for(element: list)
+		result.add(func(element))
+	
+	return result
+}
+
+map<List, InElement>(list: List<InElement>, func)
+{
+	result: List<type func(InElement)> 
+	
+	for(element: list)
+		result.add(func(element))
+	
+	return result
+}
+
+map(list, func)
+{
+	result: type list 
+	
+	for(element: list)
+		result.add(func(element))
+	
+	return result
+}
+
+makeLiteral<[String]: char>()
+{
+	static literal: [char] const = [[String:0..1]]
+}
+
+create<T>(): T
+{
+}
+
+cool: List(int)
+
+cool: List{int}
+
+cool: List<int>
+
+cool: List[int]

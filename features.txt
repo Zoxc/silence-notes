@@ -1,0 +1,98 @@
+[X] Union/record types
+[X] Non-nullable pointers.
+[X] Nullable pointer as a set type.
+Assert integrated with the type system?
+[X] Closures. Reference counted?
+[X] Exceptions.
+Strings in the standard library
+GC-support facilitated by reflection?
+[X] Type inference
+Infer compile-time status of parameters?
+Type classes?
+Compile-time string, tuples/arrays reflection?
+Macros as compile-time strings
+[X] Classes
+Member pointers syntactic sugar for function pointers?
+Operator overloading? Using type classes?
+operator [] returns a pointer to the object? May return null? operator []= allows you to set new fields?
+Namespaces. One per file? No - you'd want to have each class in it's own file. Advanced imports? 
+[X] Typesafe enums/bitfields
+[X] Enum with records. Size different for each value? Immutable by default.
+[X] Support tagged pointers by encoding it in a enum. Null pointers is a special case of this.
+[N] Implict conversion from values to pointers? - No use references
+[X] Dot operator dereferences pointers
+Local variables cannot shadow other local variables
+this and super act like regular variables
+Global string mixins
+[X] Function string mixins
+D nested structs, similar to closures?
+Immutable pointers
+Numeral and string literals with general types. They are converted to the right type at compile using templates.
+Implict type class for each operator?
+Most things should be expressions. Returns should be explicit
+Allow global constants without types
+Operators require the same types on both sides? (simplifies type inference) Magic casting operation?
+No overloading functions to simplify type inference?
+No template specialization to simplify type inference?
+No changing of struct public interface to simplify type inference? Is this a problem?
+Functions on integers?
+Keyword to force compile time evalution of expressions?
+Constructors and destructors
+D like copy constructor which copies fields. No access to source. Assignment operator inferred from this
+[N] C++ references. Passing structs by values is not supposed to have any side effects so const StructType will be an efficient way of passing by value (breaks if the struct is modified over time). Pointers to be used if you want to modify anything.
+	- Define that arguments must not be modified during the duration of the call. Pass objects by pointers when possible. Dynamic ABI allows that.
+[N] L and R-value references? Still no
+C++ concepts/Haskell type classes for all templates arguments, no duck typing
+Template parameter immutable lists
+volatile, immutable data?
+Only allow bool in ifs, operators, etc. (require pointers to be compared with nil) to simplify type inference for bools?
+D like scoped exception handlers?
+D like lazy argument evalution?
+Integer overflow undefined with additions/subtractions?
+How to do placement new? Would it require overloads?
+Pure/compile time function attributes?
+Globals thread local by default
+Chained Comparison Operators: 1 < x < 2
+
+How to specify templates types with type contraints and specialization?
+
+unit as the unit type, sizeof(unit) == 0, so storing it and dereferencing pointers are noops. You can get the instance by unit() {}
+bottom as the bottom type, the type of return <expr>, raise <expr> and functions never returning.
+
+D like tuples: http://dlang.org/tuple.html
+
+var1: auto
+var2: auto = 3
+
+auto as special keyword for type where you want type inference. You can nest it, like (arg: auto): auto
+
+Have both bitwise and logical operations with different precedences
+
+~ Concatentation operator, works for strings and fixed size arrays. make_literal passed an array of chars instead of using tuples.
+	- [1, 2] slicing on arrays to go with it
+	- overloading by arity
+
+read-only, write-only, in, out, volatile
+
+Only allow specialization in template Name {} syntax. Function and struct templates can have their type inferred. Or have use module A(T) {} for that kind of template and use a template keyword for specialization of all types.
+
+Inf:
+C
+C++
+Haskell
+Scala
+Ceylon
+Rust
+D
+
+Implict conversion by subset/superset types/ convertable to-from types.
+
+A(8) can be both instantitation and constructors, use A[8] instead?
+
+C++ concepts
+ - template template parameters explicit in concept and parameters
+
+ 
+http://www.codeproject.com/Articles/192825/Bird-Programming-Language-Part-1
+http://parasail-programming-language.blogspot.no/
+http://nimrod-code.org/question.html

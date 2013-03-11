@@ -1,0 +1,76 @@
+class Allocator T
+{
+	const bool can_free
+	
+	interface T
+	{
+		allocate(bytes: uint): *unit
+		reallocate(memory: *unit, old_bytes: uint, new_bytes: uint): *unit
+		free(memory: *unit): unit
+	}
+}
+
+struct StandardAllocator
+{
+	static allocate(bytes: uint): *unit
+	{
+		return C.malloc(bytes);
+	}
+
+	static reallocate(memory: *unit, old_bytes: uint, new_bytes: uint): *unit
+	{
+		return C.realloc(memory, new_bytes)
+	}
+	
+	static free(memory: *unit): unit
+	{
+		C.free(memory);
+	}
+}
+
+instance Allocator StandardAllocator
+{
+	const bool can_free = true
+}
+
+struct Vector A = StandardAllocator
+	where Allocator A
+{
+	A allocator
+	
+	constructor([args: A.Args]) :
+		allocator([args])
+	{
+	}
+}
+
+struct AllocatorWrapper A
+	where Allocator A
+{
+	A allocator
+	
+	constructor([args: A.Args]) :
+		allocator([args])
+	{
+	}
+	
+	allocate(bytes: uint): *unit
+	{
+		return allocator.allocate(bytes);
+	}
+
+	reallocate(memory: *unit, old_bytes: uint, new_bytes: uint): *unit
+	{
+		return allocator.allocate(memory, old_bytes, new_bytes)
+	}
+	
+	free(memory: *unit): unit
+	{
+		allocator.free(memory);
+	}
+}
+
+instance Allocator AllocatorWrapper A
+{
+	const bool can_free = A.can_free
+}

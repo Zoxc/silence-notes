@@ -1,0 +1,121 @@
+class Assignable T // Builtin, Inferrable by operator =
+{
+	interface T
+	{
+		assign(other: T): unit
+	}
+}
+
+class Constructable T // Builtin, Inferrable by new keyword and local variables
+{
+	construct(): T
+}
+
+class Callable T, [strict Args: Assignable] // Builtin, Inferrable by operator ()
+{
+	type Result: Assignable
+	
+	interface T
+	{
+		const apply([Args]): Result
+	}
+}
+
+class Collection T
+{
+	type ElementType: Assignable
+	
+	interface T
+	{
+		add(a: ElementType): unit
+	}
+}
+
+class GenericCollection T[A]
+	where Collection T[A]
+{
+	interface A: T[E]
+	{
+		const map[Func: Callable[E]](func: Func): T[Func.Result]
+		const mapTo[OtherCollection[OE]: GenericCollection](): OE[E]
+	}
+}
+
+map[List[A]: GenericCollection, E, Func: Callable[E]](list: List[E], func)
+{
+	result: List[Func.Result]
+	
+	for(element: list)
+		result.add(func(element))
+	
+	return result
+}
+
+class Functor F[A]
+{
+	fmap[In, Func: Callable[In]](func: Func, F[In]): F[Func.Result]
+}
+
+class Functor F[A]
+{
+	struct F[In]
+	{
+		fmap[Func: Callable[In]](func: Func): F[Func.Result]
+	}
+}
+
+class Math T
+{
+	operator +(a, b: T): T
+}
+
+struct CallWrapper[[Args]]
+{
+	type Result = int
+	
+	const apply([Args]): int
+	{
+	}
+	
+	instance Callable Args
+	{
+		interface T
+		{
+			type Result: Assignable
+			const apply([Args]): Result
+		}
+	}
+}
+
+construct[T](list: List[E], func): *T
+{
+	return new T
+}
+
+struct A {}
+struct J B {}
+
+struct Maybe A
+{
+	field: A
+}
+
+class Tofu T[P1,P2]
+{
+	tofu[J[P1], A](val: J[A]): T[A, J]
+}
+
+struct Frank A, J[P1]
+{
+	field: J[A]
+}
+
+instance Tofu Frank
+{
+	tofu(x)
+	{
+		return Frank{field = x}
+	}
+	
+	tofu[J[P1], A](val: J[A]): Frank[A, J]
+}
