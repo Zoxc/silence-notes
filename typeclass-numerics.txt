@@ -1,9 +1,28 @@
-class Assignable T // Builtin, Inferrable by operator =
+class interface Value[T] // Builtin, Inferrable by passing types by value
+
+class Widen[L, R] // Builtin
 {
-	interface T
-	{
-		assign(other: T): unit
-	}
+	type Result
+	lhs(l: L): Result
+	rhs(r: R): Result
+}
+
+instance Widen[T, T]
+{
+	type Result = T
+	lhs(l: T) { return l }
+	rhs(r: T) { return r }
+}
+
+class AddOp[T] // Builtin
+{
+	add(l: T, r: T): T
+}
+
+add(l: L, r: R): W.Result
+	where W := Widen[L, R], AddOp[W.Result]
+{
+	return AddOp[W.Result].add(W.lhs(l), W.rhs(r))
 }
 
 class Constructable T // Builtin, Inferrable by new keyword and local variables

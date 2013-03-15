@@ -40,7 +40,7 @@ Keyword to force compile time evalution of expressions?
 Constructors and destructors
 D like copy constructor which copies fields. No access to source. Assignment operator inferred from this
 [N] C++ references. Passing structs by values is not supposed to have any side effects so const StructType will be an efficient way of passing by value (breaks if the struct is modified over time). Pointers to be used if you want to modify anything.
-	- Define that arguments must not be modified during the duration of the call. Pass objects by pointers when possible. Dynamic ABI allows that.
+	- Define that arguments must not be modified during the duration of the call. Pass objects by pointers when possible. Dynamic ABI allows that. Address of & value forces a copy
 [N] L and R-value references? Still no
 C++ concepts/Haskell type classes for all templates arguments, no duck typing
 Template parameter immutable lists
@@ -91,8 +91,91 @@ A(8) can be both instantitation and constructors, use A[8] instead?
 
 C++ concepts
  - template template parameters explicit in concept and parameters
-
  
+Function pointer fields can act like assignable methods
+
+Operator new and delete be functions?
+	# class is Scala or Haskell like traits or type classes
+	
+	class Constructor[*Args] # Args is variadic
+	{
+		type Constructed
+		static construct(obj: *Constructed, args: Args): unit
+	}
+	
+	class Destructable # All types have instance of this
+	{
+		destruct(): unit
+	}
+	
+	struct A
+	{
+		field: int
+		inline: Struct
+		
+		constructor : field(1) {} # A Constructor type class instance for A is created
+		
+		constructor named(i) : field(i) {} # named is a dummy type that constructs A instances, a Constructor type class instance for it is created where the Constructed type is A
+	}
+	
+	new[T: Constructor[Args], *Args](args: Args): *R
+		where R = T.Constructed
+	{
+		obj := C.malloc(sizeof R) as *R
+		T.construct(obj, args)
+		return obj
+	}
+	
+	delete[T: Destructable](obj: *T)
+	{
+		(*obj).destruct()
+		C.free(obj)
+	}
+	
+	lvar: A
+	var: := new[A]()
+	delete(var)
+	
+	lvar: A.named(2)
+	var := new[A.named](2)
+	delete(var)
+	
+	
+Use a construct keyword in constructors for initializing overridable fields?
+
+
+Type class instances in struct works like mixins, makes all type class members visible in the struct
+	struct StringList
+	{
+		instance Collection[String]
+	}
+	
+Select which type classes to automatically derive:
+	struct A
+		deriving Eq, Ord, Show
+	{
+	}
+
+Allow use of type classes instead of types directly:
+	map[List: GenericCollection](list: List[E], func: Callable[E])
+	{
+		result: List[func.Result]
+		collection_view: Collection = cast result # View it as a regular Collection
+		
+		for(element: list)
+			result.add(func(element))
+		
+		return result
+	}
+	
+Scopes with type parameters:
+	scope GLApp[GL: GLInterfaceTypeClass]
+	{
+		run() { GL.Render() }
+	}
+	
+	GLApp[OpenGLESLibrary].run() # Pick library at compile time
+	
 http://www.codeproject.com/Articles/192825/Bird-Programming-Language-Part-1
 http://parasail-programming-language.blogspot.no/
 http://nimrod-code.org/question.html
