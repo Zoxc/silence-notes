@@ -1,0 +1,1 @@
+Use the same AST for types and values. Process them with a single function. Can restrict grammar when types are known in advance. Pass in what is allowed: values, types or even kinds

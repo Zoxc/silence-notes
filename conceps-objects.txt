@@ -1,7 +1,17 @@
 class Assignable // Builtin, Inferrable by passing types by value
 class Constructable // Builtin, Inferrable by new keyword and local variables
 
-class Callable[strict Args: Assignable] // Builtin, Inferrable by operator ()
+
+class Callable[T, Func] // Builtin, Inferrable by operator ()
+{
+	type Result: Assignable
+	
+	const apply: Func(): Result
+	const apply: Func(Result)
+}
+
+
+class Callable[T, strict Args: Assignable] // Builtin, Inferrable by operator ()
 {
 	type Result: Assignable
 	

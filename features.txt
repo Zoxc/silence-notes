@@ -41,6 +41,8 @@ Constructors and destructors
 D like copy constructor which copies fields. No access to source. Assignment operator inferred from this
 [N] C++ references. Passing structs by values is not supposed to have any side effects so const StructType will be an efficient way of passing by value (breaks if the struct is modified over time). Pointers to be used if you want to modify anything.
 	- Define that arguments must not be modified during the duration of the call. Pass objects by pointers when possible. Dynamic ABI allows that. Address of & value forces a copy
+		Do this for local variables passed only? Probably
+		Caller decides when to pass by pointer? ABI should always take a pointer, caller copies if needed
 [N] L and R-value references? Still no
 C++ concepts/Haskell type classes for all templates arguments, no duck typing
 Template parameter immutable lists
@@ -56,7 +58,7 @@ Chained Comparison Operators: 1 < x < 2
 
 How to specify templates types with type contraints and specialization?
 
-unit as the unit type, sizeof(unit) == 0, so storing it and dereferencing pointers are noops. You can get the instance by unit() {}
+unit as the unit type, sizeof(unit) == 0, so storing it and dereferencing pointers are noops. You can get the instance by unit() {} Equal to the typle type (), instance ()
 bottom as the bottom type, the type of return <expr>, raise <expr> and functions never returning.
 
 D like tuples: http://dlang.org/tuple.html
@@ -169,6 +171,7 @@ Allow use of type classes instead of types directly:
 	}
 	
 Scopes with type parameters:
+	# Acts like singleton objects?
 	scope GLApp[GL: GLInterfaceTypeClass]
 	{
 		run() { GL.Render() }
@@ -176,6 +179,435 @@ Scopes with type parameters:
 	
 	GLApp[OpenGLESLibrary].run() # Pick library at compile time
 	
+Add tuples:
+	Type function to map bools in tuples to ints
+	
+	class TypeMap T
+	{
+		type Result
+	}
+	
+	instance TypeMap Bool
+	{
+		type Result = Int
+	}
+	
+	instance TypeMap T
+	{
+		type Result = T
+	}
+	
+	class TupleMap T
+	{
+		type Result
+	}
+	
+	instance TupleMap EmptyTuple
+	{
+		type Result = EmptyTuple
+	}
+	
+	instance TupleMap TupleCell[L, R]
+	{
+		type Result = TupleCell[TypeMap[L], TupleMap[R].Result]
+	}
+	
+	struct EmptyTuple {}
+	struct TupleCell[L, R: Tuple]
+	{
+		f: L
+		fs: R
+	}
+	
+	class Tuple[T]
+	instance Tuple EmptyTuple
+	instance Tuple TupleCell[L, R: Tuple]
+	
+	class AssignableTuple[T: Assignable]
+	instance AssignableTuple EmptyTuple
+	instance AssignableTuple TupleCell[L: Assignable, R: AssignableTuple]
+	
+	
+	() # Sugar EmptyTuple
+	(a: uint, b: bool), (uint, bool) # Sugar for TupleCell[uint, TupleCell[bool, EmptyTuple]]
+	
+	(uint, bool, int) # Sugar for TupleCell[uint, TupleCell[bool, TupleCell[int, EmptyTuple]]]
+	
+	Have a built in type function which maps (), a, (a, b...) to EmptyTuple, TupleCell[a, EmptyTuple], TupleCell[a, TupleCell[b, ...]] and back? Deals with the tuple with one element case nicely
+		Also allows tuples to be implementent efficiently
+	
+Let function types take tuples:
+	hello: (a: unit) -> bool # Function from (unit) to bool
+	# Always require tuples
+	
+	type Function[Input: AssignableTuple, Result]
+	
+	class Callable[T, Args: AssignableTuple]
+	{
+		type Result: Assignable
+		
+		const apply: Args -> Result
+	}
+
+	class Constructor[T, Args: AssignableTuple]
+	{
+		type Constructed
+		static construct(obj: *Constructed, args: Args): unit
+	}
+	
+	print (str) :: (string) -> unit { another_print str }
+	
+	new args :: [T: Constructor[Args], Args] Args -> *T.Constructed where R = T.Constructed
+	{
+		obj := C.malloc(sizeof R) as *R
+		T.construct(obj, args)
+		return obj
+	}
+	
+Support types which takes 0 bytes as storage:
+	for example: a field pointer to a static field, empty structs, unit type
+
+Add a newtype which inherites all the type class instances of the old type:
+		Read: [Ken96] AJ Kennedy. Type inference and equational theories. LIX	RR/96/09, Ecole Polytechnique, September 1996. - unit-inference-2011-06-24-techreport.pdf
+	Meters = newtype Int
+	
+	a: Meters = 1 + 2 * 2
+	b: Int = a # Type error
+
+Phantom types? http://www.haskell.org/haskellwiki/Phantom_type
+
+Don't allow polymorphic recursion / infinite types
+
+Closures have type () -> ():
+	destruct :: () -> () can be both a closure and a method when in a type class. When it a struct it depends on whether or not it has a body.
+	How to do function and closure pointers?
+	value.method wouldn't add the implict this parameter, it should be stored in the closure type
+	&function and &T.method wouldn't return a pointer to their types, but a more complex operation returning function pointers, which is a bit weird
+
+	a *> b nullable: a ^> b
+	a => b
+	New a new function pointer type!
+	
+More Haskell like syntax:
+	class Constructor T Arg
+	{
+		type Constructed
+		static construct :: (*Constructed, Arg) -> ()
+	}
+
+	class Destructable # All types have instance of this
+	{
+		destruct :: () -> ()
+	}
+
+	struct A
+	{
+		field :: int
+		inline :: Struct
+		
+		constructor  { construct field 1 } # A Constructor type class instance for A is created
+		
+		constructor named i { construct field i } # named is a dummy type that constructs A instances, a Constructor type class instance for it is created where the Constructed type is A
+	}
+
+	new arg :: [Constructor[Arg] => T, Arg] Arg -> *R
+		where R = T.Constructed
+	{
+		obj := C.malloc(sizeof R) as *R
+		T.construct (obj, arg)
+		return obj
+	}
+	 
+	delete obj :: [Destructable => T] *T -> ()
+	{
+		(*obj).destruct()
+		C.free(obj)
+	}
+
+	lvar: A
+	var: := new[A] ()
+	delete var
+
+	lvar: A.named 2
+	var := new[A.named] 2
+	delete var
+	
+	class Widen L R
+	{
+		type Result
+		static lhs :: L -> Result
+		static rhs :: R -> Result
+	}
+
+	instance[T] Widen T T
+	{
+		type Result = T
+		lhs l { return l }
+		rhs r { return r }
+	}
+	 
+	class AddOp T
+	{
+		add_impl :: (T, T) -> T
+	}
+
+	add l r
+		where W := Widen[typeof l, typeof r]
+	{
+		return AddOp.add_impl(W.lhs l, W.rhs r)
+	}
+
+	add[L, R] l r :: (L, R) -> Widen[L R].Result
+	
+	Refer to the types of value parameters in type?
+		add l r :: (l, r) -> Widen[l, r].Result
+	
+	map :: [GenericCollection => List[A], E, Callable[E] => Func: ](list: List[E], func)
+	
+	Allow a way to specify the type of a single specific parameter
+		map[GenericCollection => List[A], E] list:List[E] func
+		
+	map (list, func) :: [List[A]: GenericCollection, E, Func] List[E] -> Func
+	{
+		result: List
+		
+		for(element: list)
+			result.add(func(element))
+		
+		return result
+	}
+
+		field :: Struct.constructor?
+		
+		# Allow data constructors here?
+		field :: Tree
+		field :: Leaf
+		
+Use whitespace for indentation?
+	The indentation which a block starts with is expected to be use for the rest of the block. Don't allow mixing of tabs and space
+	Generate an error for empty blocks?
+		if something
+			# no block here!
+		ok
+		
+	Whitespace-only (empty) lines are ignored
+	
+	Lexer generates START_BLOCK and STOP_BLOCK tokens? IDENT_CHANGE tokens?
+	Emit error about whitespace/tab conflict to the parser which can ignore them they don't matter? (for say put(1, \n 2))
+	Set a lexer flag when whitespace should be ignored?
+	Have LINE tokens represent one newwline and possibly multiple empty lines and carry data about the identation level?
+	How to handle mixed nesting of whitespace types? eg:
+		put (
+			if a
+				2
+			    ) # How to handle this being on the same indentation level as 2? Have a stack of braces level and pop the indenation until we find one which has it
+		
+		Have , allow a new type of indentation per line? Probably not
+		
+		Need a way to detect if a function has a body
+		
+		Optional braces:
+			if a
+			{
+				# in if
+				}
+			
+			if a {
+					# in if
+				}
+		
+			if a
+				{ # brace must be at a whitespace level below the if, this uses whitespace indentation and is a new code block in addition to the if's
+				}
+		
+		# Best idea
+		Use an counter for disabling whitespace?
+		Have scopes of blocks where "if a > 1" creates a new one based on the indentation the line it's on? Fall back to the old scope when done
+		
+		INDENT and DEINDENT tokens, send after LINE?		
+		http://www.secnetix.de/olli/Python/block_indentation.hawk
+		
+		A process that skips all lines/comments at the start of a file and finds the first line with content. Use the indentation of that as the global scope indentation
+		
+	
+Have empty blocks have the type Nothing a => a. unit/() and nil are instances of that typeclass. Defaults to ()
+
+
+Have trailing if, like Ruby
+
+Atomic memory transactions?
+
+Construct any object with {} syntax, calls the 'literal' constructor with the specified arguments:
+	# Needs a way to allow lists of things on runtime
+	Struct a = {1, "hello"}
+	
+Use [Hello] as attribute syntax?
+	[Import 'printf'] print_str :: *str -> ()
+	
+Rust stealing:
+	'match' keyword instead of 'case'
+	do like syntax?
+	let (a, b) = (1, 2) # Pattern match variable declarations!
+	
+	self is a reference to an object, not a pointer?
+	
+	Call Assignable/Movable Copyable?
+	
+	Const as type class? Investigate?
+	
+	Allow all types to be struct-like, even primitives and enums?
+	
+	Closures that can only live on the stack? Stack closures references variables while managed closures copies values
+		Nah, use a keyword for when you want a closure literal to go on the stack when no heap is available. How to handle method field accesses?
+			static a => return 2
+			var = static obj.method
+			
+			Probably not needed. You may want it when you want to use different heap functions after bringing up a heap
+			
+	a -> b is managed.
+
+What would the syntax of a operator to get the enclosing structure of a type, given a field pointer would look like?
+	Can we use a function?
+	
+	container_of[T, F] (obj :: *F, field :: F in T)
+		return (obj as uint - field as uint) as *T
+	
+Allow field pointers to static fiends, another type with 0 bit storage!
+
+Call type classes traits like Rust and Scala?
+
+Range compare:
+	1<x<3
+	4>=x>3
+	
+Python else for loops?
+	for n in range(2, 10):
+		for x in range(2, n):
+			if n % x == 0:
+				print n, 'equals', x, '*', n/x
+				break
+		else:
+			# loop fell through without finding a factor
+			print n, 'is a prime number'
+
+Grammar binding of [] and ' ' (function application):
+	'a func 2'
+	'a func[Type] 2' # Can't do this :( New a new syntax
+	'func[Type] 2'
+	'func 2[0]'
+	'func ()[0]'
+	'func (2)[0]'
+	'func (2, 3)[0]'
+	
+	'a (func 2)'
+	'a (func[Type] 2)'
+	'(func[Type]) 2'
+	'(func 2)[0]'
+	'(func ())[0]'
+	'(func (2))[0]'
+	'(func (2, 3))[0]'
+	
+	Still allow func 1 syntax after new parameter functionality? Nice for operator like functions like delete and cast. Don't allow () as the parameter
+	
+How to do function call forwarding with type class constraints?
+
+'new' function at compile time allocates storage in the data section if it has references at link-time
+
+Syntax for values in type parameters?
+	struct Test[size :: uint, name :: string]
+		
+	Trick to pass value as a type:
+		class Value T, V
+		{
+			static value :: *V
+		}
+		
+		struct SomeValue V
+		{
+			static value :: *V = <value>
+			
+			instance Value[V]
+		}
+		
+		struct NoValue V
+		{
+			static value :: *V = nil
+			
+			instance Value[V]
+		}
+		
+		struct ParameterInfo[Type, Optional: Value[Type]]
+
+New function parameters:
+	class List[T]
+	
+	# Unit type indicates the end of a list
+	instance List[()] 
+	
+	struct Node[Type, Next: List]
+		instance List
+	
+	# An argument list
+	Node[int, Node[bool, ()]] 
+	
+	# Compiler creates an anonymous type with an instance of Named for named parameters
+	class Named[T] 
+		type Type
+		static
+			# Name of this parameter 
+			name :: string 
+			
+			# A pointer to the default value to pass, if not specified at call location.
+			# 'nil' means no default value is provided
+			default_value :: *Type 
+	
+	# Named parameters get their own node type in the List
+	struct NamedNode[Value: Named, Next: List] 
+		instance List
+	
+	# Function type constructors (->) takes a type which is an instance of List
+	# These two types are the same:
+	Node[int, Node[bool, ()]] -> int
+	(int, bool) -> int
+	
+	# No syntatic sugar to create types with NamedNodes other than function definitions
+	# Only applying function definitions gives you access to the named arguments
+	# Using functions as first class values replaces NamedNode nodes with Node.
+	
+	test(a: int) -> unit
+	# Internal type: NamedNode[test_Arg_A, ()] -> unit
+	# test_Arg_A is the anonymous type with an instance of Named
+	
+	# Named parameter invocation
+	test(a: 2)
+	
+	forwarder([args: Args]) -> unit
+	# Args must be an instance of List
+	# Only a variadic argument allowed, named arguments may clash with more arguments. Allow a way to use unnamed arguments in addition?
+	
+	# Args can be inferred
+	forwarder([args])
+		return test([args])
+	
+	# Forwarded named parameter invocation
+	forwarder(a: 2)
+	
+Named parameter invocation for type functions too?
+	
+Write a function which does something to all arguments of a tuple where all types are instances of some type class
+
+cast function:
+	class Castable[From, To]
+		static cast(val: From) -> To
+		
+	instance[T] Castable[T, T]
+		static cast(val: T) -> T
+			return val
+	
 http://www.codeproject.com/Articles/192825/Bird-Programming-Language-Part-1
 http://parasail-programming-language.blogspot.no/
 http://nimrod-code.org/question.html
+
+http://www.rust-lang.org/
+http://claylabs.com/clay/
+http://stackoverflow.com/questions/1995113/strangest-language-feature/2004154#2004154
