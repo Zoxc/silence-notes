@@ -1,4 +1,4 @@
 placement new/allocation syntax
 union types, parent/shared fields?
 union types, deconstruction
-var varname syntax? nah
+var varname syntax? nah, or yeah!

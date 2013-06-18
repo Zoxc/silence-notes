@@ -1,0 +1,32 @@
+Type classes
+Operator overloading - Using type classes
+Closures. Reference counted
+Exceptions.
+Strings in the standard library
+Typesafe enums/bitfields
+Type inference
+Methods should capture as closures containing the self parameter. Address of methods results in a function pointers with a self argument.
+. and [] operators dereferences pointers
+Numeral and string literals with general types. They are converted to the right type at compile-time using templates.
+Most things should be expressions. Returns should be explicit
+Constructors and destructors
+D like copy constructor which copies fields. No access to source. Assignment operator inferred from this
+C++ concepts/Haskell type classes for all templates arguments, no structured typing
+No overloading functions to simplify type inference? Allow overloading arity, doesn't interfer with type inference.
+A(8) can be both instantitation and constructors, use A[8] for the template argument instead? Yes
+
+Type families, not template specialization
+	No template specialization to simplify type inference? Yes, use type families to work around this.
+	No changing of struct public interface to simplify type inference? Is this a problem? Same as above. Perhaps allow an extended API for fixed types, like a Vector with a default constructors taking no allocator
+	Only allow specialization in template Name {} syntax. Function and struct templates can have their type inferred. Or have use module A(T) {} for that kind of template and use a template keyword for specialization of all types.
+
+Operator new and delete be functions
+
+Handle non-copyable and opaque types with errors on the code generation level
+	
+Use whitespace for indentation? Yes
+	The indentation which a block starts with is expected to be use for the rest of the block. Don't allow mixing of tabs and space	
+	Whitespace-only (empty) lines are ignored
+	Use an counter for disabling whitespace?
+	Have scopes of blocks where "if a > 1" creates a new one based on the indentation the line it's on? Fall back to the old scope when done
+	A process that skips all lines/comments at the start of a file and finds the first line with content. Use the indentation of that as the global scope indentation

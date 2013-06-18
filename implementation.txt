@@ -1,1 +1,35 @@
 Use the same AST for types and values. Process them with a single function. Can restrict grammar when types are known in advance. Pass in what is allowed: values, types or even kinds
+
+Replace Types::Variable with type parameters in some way.
+	Replace TypeParams with Types::Variable before type inference.
+	Replace Types::Variable with TypeParams after. Ensure that none of the user declared TypeParams did unify with anything.
+	
+	How to do this with nested type parameters?
+	
+Sort typeclass contraints by the address of the typeclass to make it easier to find duplicates.
+
+In the string table implementation:
+	When adding a new entry, set it's last used module to the one currently being parsed. If it already were current we don't have to add the symbol to the current module's reference list. Assumes only one module is parsed at a time.
+		This trick doesn't work as well with multiple threads. Make the fields atomic and fall back to a module local hashtable if it isn't set.
+	
+For typeclass constraints
+	If the callee finds an instance, it passes it on to the code generation
+	If the caller finds an instance, it passes it on to the code generation
+	
+	Pass on the scope of the constrant / where it was resolved.
+		Pass instances instead to reduce duplication of generated functions?
+	
+	The results differs only if the callee and caller are in different scopes.
+	
+	You can force checks in the caller by doing say:
+		hello(c String) where Typeclass[String]
+		
+		Not useful, we would not be able to use that typeclass instance for anything
+		
+	The code generation picks which typeclass instance to use based on dictionaries passed in. Compare to Haskell's runtime dictionaries
+		Structs, variables and functions needs to know which typeclass instances to use
+			Ensure fields use the same typeclass instances as structs
+		Store typeclass constraints and which typeclass constraints or typeclass instance they where instanced to along with each reference
+		Create a correction map to use when modifiying constraints
+		
+	How to deal with typeclass instances with typeclass constraints themselves?

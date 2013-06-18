@@ -1,0 +1,152 @@
+Trivial:
+	Type trailing with colon
+		global, other_global: int
+		yet_another_global: () -> string
+		
+		func()
+			a, c: int
+			b := 4
+
+	Type trailing and var keyword
+		var 
+			global, other_global int
+			yet_another_global () -> string
+			
+		func()
+			var a, c int
+			var b = 4
+
+	Type trailing and var and fun keyword
+		global, other_global int
+		yet_another_global () -> string
+		
+		fun func
+			var a, c int
+			a = 2
+			var b = 4
+
+	Type trailing and var keyword. Space between name and '(' tells us if we're dealing with a global or function
+		global, other_global int
+		yet_another_global () -> string
+		
+		func()
+			var a, c int
+			var b = 4
+
+	Type leading and var keyword
+		int global, other_global
+		() -> string yet_another_global 
+		
+		func()
+			var int a, c 
+			var b = 4
+
+	Type trailing and dot prefix.
+		.global, other_global int
+		.yet_another_global () -> string
+		
+		func
+			.a, c int
+			.b = 4
+
+Non-trivial (requires rewriting the AST after parsing):
+	Type trailing and let keyword
+		let 
+			global, other_global int
+			yet_another_global () -> string
+			
+		func()
+			a, c int
+			let b = 4
+
+	Type trailing and let keyword. Space between name and '(' tells us if we're dealing with a global or function
+		global, other_global int
+		yet_another_global () -> string
+		
+		func()
+			a, c int
+			let b = 4
+
+	Type trailing and let and fun keywords
+		global, other_global int
+		yet_another_global () -> string
+		
+		fun func
+			a, c int
+			let b = 4
+
+	Type leading and let keyword
+		int global, other_global
+		() -> string yet_another_global 
+		
+		func()
+			int a, c 
+			let b = 4
+
+Winner:
+	Type trailing and . operator. Space between name and '(' tells us if we're dealing with a global or function
+		global, other_global int
+		yet_another_global () -> string
+		
+		func()
+			a, c int
+			.b = 4
+			.h
+
+Alternative function types syntax:
+	(> string) var
+	(int, bool > string) var
+	args > result var
+	
+	(-> string) var
+	(int, bool -> string) var
+	args -> result var
+	
+Function pointers:
+	(*> string) var
+	(int, bool *> string) var
+	args *> result var
+	
+Use just comma for tuples?
+	int, bool tuple
+	
+	How to do args -> result?
+		Use a named function type?
+	
+Only allow ->, *> inside parentheses?
+
+
+:hm()
+
+
+
+:cool
+
+:extern
+
+a ? 5 : 3
+if 3 then 3 else 5
+
+$[]
+$fs
+Attribute syntax?
+	.name(int)
+	[name 4] s: int
+	@name[4]
+	
+	:name(4) .s int
+	
+	:fs *char
+
+	a: .fs *char
+	
+	.extern .cdecl i: int
+	
+	a: @fs *char
+	
+Precedence of attributes?
+	.var :fs *char
+	.var :cdecl int -> func
+	Lowest possible?
+	At level with statements to allow :reg(eax) .var int?
+	

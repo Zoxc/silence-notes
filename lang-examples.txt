@@ -1,23 +1,15 @@
 Functions:
 	Inferred types:
 		factorial(i)
-		{
 			return case i
-			{
 				0: 1
 				else factorial(i) * i
-			}
-		}
 	
 	Explicit types:
 		factorial(i: int): int
-		{
 			return case i
-			{
 				0: 1
 				else factorial(i) * i
-			}
-		}
 			
 	External:
 		import("malloc") alloc(): ^unit
@@ -42,10 +34,10 @@ Datatypes:
 	Builtin-integers:
 		byte, int8 // 8-bit signed
 		ubyte, uint8 // 8-bit unsigned
-		int16 // 16-bit signed
-		uint16 // 16-bit unsigned
-		short, int32 // 32-bit signed
-		ushort, uint32 // 32-bit unsigned
+		short, int16 // 16-bit signed
+		ushort, uint16 // 16-bit unsigned
+		int32 // 32-bit signed
+		uint32 // 32-bit unsigned
 		int // signed pointer sized
 		uint // unsigned pointer sized
 		long // signed 2x pointer sized

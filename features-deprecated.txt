@@ -1,0 +1,290 @@
+Do not add:
+	Infer compile-time status of parameters.
+	Implict conversion from values to pointers
+	D like tuples: http://dlang.org/tuple.html - No varargs for types. Use a recursive type list instead
+	Let function types take tuples
+
+New variable syntax?	
+	var a = 1
+	var a, b
+	var a int, b Struct(1, 2) # Allow types / data constructors after variable name?
+	
+	Replace : type specifier with space
+	
+Implement Callable on string types so you can do:
+	struct String
+		apply(v: String) -> String
+	
+	"val: " val " hello: " hello
+		same as:
+	"val: ".apply(val).apply(", hello: ").apply(hello)
+	
+	Means multiplication for integers?
+		a b -> a * b
+		(a + 2) 3 b -> (a + 2) * 3 * b
+		
+	No - Probably doesn't improve readability
+	
+Allow construction of non-copyable types by not requiring Copy typeclass on the initial assignemnt
+	.var = Type("hello")
+	var = Type("another") # not allowed if Type doesn't implement Copy
+	
+	.var2 = var # needs to handle this case. Make plain references require Copy?
+		Does not allowing plain references handle all the cases when types might be copied?
+		If so, 'var = Type("another")' could be allowed since it's not really a copy
+		Does it handle return values? - No, return Type("Hm") would be allowed. It also doesn't generate an error when defining functions.
+			Solved by making return and arguments of functions require Copy
+			Handles the case of func(Type("hm")) too
+			
+			Return values doesn't have to be copyable.
+			
+			func()
+				return Type("hello")
+			.var = func()
+			
+			The object is never copied.
+			
+	Which values needs to have a Copyable type?
+		Arguments passed to function applications (Callable typeclass can require this)
+		Plain references to variables
+			When the * or & operators are used this is not required
+		The result of the * operator must be copyable, except when it's on the left hand side of assignment
+		The result of the [] operator have to be copyable, except when it's on the left hand side of assignment
+		
+	Which values needs to have a Sizable type (not a opaque type)?
+		Literals (already have a typeclass which can require Sizable)
+		Variables/fields (would this be handled by the Constructable typeclass?)
+		Constructor results (Constructable typeclass would require Sizable)
+		The result of the * operator
+		
+	Copyable implies Sizable?
+		
+		Implement Copyable and Sizable by an integer on type variables.
+			0 - Nothing
+			1 - Sizable
+			2 - Copyable and sizable
+			
+		On unification
+			The highest value between two type variables are used.
+			Checks that fixed types implements the right typeclasses
+			
+		Turn them into proper typeclass constraint when type inference is done
+		
+	Handle errors about Sizable and Copyable at the code generation stage?
+		- No mess with typeclasses (so it's more efficient)
+		- No need to infer typeclass constraint as much
+		- Less friendly error messages
+		
+		Yes
+
+Use whitespace for indentation? Yes
+	Lexer generates START_BLOCK and STOP_BLOCK tokens? IDENT_CHANGE tokens?
+	Emit error about whitespace/tab conflict to the parser which can ignore them they don't matter? (for say put(1, \n 2))
+	Set a lexer flag when whitespace should be ignored?
+	Have LINE tokens represent one newwline and possibly multiple empty lines and carry data about the identation level?
+	How to handle mixed nesting of whitespace types? eg:
+		put (
+			if a
+				2
+				) # How to handle this being on the same indentation level as 2? Have a stack of braces level and pop the indenation until we find one which has it
+		
+		Have , allow a new type of indentation per line? Probably not
+		
+		Need a way to detect if a function has a body
+		
+		Optional braces:
+			if a
+			{
+				# in if
+				}
+			
+			if a {
+					# in if
+				}
+		
+			if a
+				{ # brace must be at a whitespace level below the if, this uses whitespace indentation and is a new code block in addition to the if's
+				}
+		
+		# Best idea
+		Use an counter for disabling whitespace?
+		Have scopes of blocks where "if a > 1" creates a new one based on the indentation the line it's on? Fall back to the old scope when done
+		
+		INDENT and DEINDENT tokens, send after LINE?		
+		http://www.secnetix.de/olli/Python/block_indentation.hawk
+		
+		A process that skips all lines/comments at the start of a file and finds the first line with content. Use the indentation of that as the global scope indentation
+
+		
+Operator new and delete be functions?
+	# class is Scala or Haskell like traits or type classes
+	
+	class Constructor[*Args] # Args is variadic
+	{
+		type Constructed
+		static construct(obj: *Constructed, args: Args): unit
+	}
+	
+	class Destructable # All types have instance of this
+	{
+		destruct(): unit
+	}
+	
+	struct A
+	{
+		field: int
+		inline: Struct
+		
+		constructor : field(1) {} # A Constructor type class instance for A is created
+		
+		constructor named(i) : field(i) {} # named is a dummy type that constructs A instances, a Constructor type class instance for it is created where the Constructed type is A
+	}
+	
+	new[T: Constructor[Args], *Args](args: Args): *R
+		where R = T.Constructed
+	{
+		obj := C.malloc(sizeof R) as *R
+		T.construct(obj, args)
+		return obj
+	}
+	
+	delete[T: Destructable](obj: *T)
+	{
+		(*obj).destruct()
+		C.free(obj)
+	}
+	
+	lvar: A
+	var: := new[A]()
+	delete(var)
+	
+	lvar: A.named(2)
+	var := new[A.named](2)
+	delete(var)
+	
+
+Let function types take tuples: - No
+	hello: (a: unit) -> bool # Function from (unit) to bool
+	# Always require tuples
+	
+	type Function[Input: AssignableTuple, Result]
+	
+	class Callable[T, Args: AssignableTuple]
+	{
+		type Result: Assignable
+		
+		const apply: Args -> Result
+	}
+
+	class Constructor[T, Args: AssignableTuple]
+	{
+		type Constructed
+		static construct(obj: *Constructed, args: Args): unit
+	}
+	
+	print (str) :: (string) -> unit { another_print str }
+	
+	new args :: [T: Constructor[Args], Args] Args -> *T.Constructed where R = T.Constructed
+	{
+		obj := C.malloc(sizeof R) as *R
+		T.construct(obj, args)
+		return obj
+	}
+	
+
+More Haskell like syntax: - No
+	class Constructor T Arg
+	{
+		type Constructed
+		static construct :: (*Constructed, Arg) -> ()
+	}
+
+	class Destructable # All types have instance of this
+	{
+		destruct :: () -> ()
+	}
+
+	struct A
+	{
+		field :: int
+		inline :: Struct
+		
+		constructor  { construct field 1 } # A Constructor type class instance for A is created
+		
+		constructor named i { construct field i } # named is a dummy type that constructs A instances, a Constructor type class instance for it is created where the Constructed type is A
+	}
+
+	new arg :: [Constructor[Arg] => T, Arg] Arg -> *R
+		where R = T.Constructed
+	{
+		obj := C.malloc(sizeof R) as *R
+		T.construct (obj, arg)
+		return obj
+	}
+	 
+	delete obj :: [Destructable => T] *T -> ()
+	{
+		(*obj).destruct()
+		C.free(obj)
+	}
+
+	lvar: A
+	var: := new[A] ()
+	delete var
+
+	lvar: A.named 2
+	var := new[A.named] 2
+	delete var
+	
+	class Widen L R
+	{
+		type Result
+		static lhs :: L -> Result
+		static rhs :: R -> Result
+	}
+
+	instance[T] Widen T T
+	{
+		type Result = T
+		lhs l { return l }
+		rhs r { return r }
+	}
+	 
+	class AddOp T
+	{
+		add_impl :: (T, T) -> T
+	}
+
+	add l r
+		where W := Widen[typeof l, typeof r]
+	{
+		return AddOp.add_impl(W.lhs l, W.rhs r)
+	}
+
+	add[L, R] l r :: (L, R) -> Widen[L R].Result
+	
+	Refer to the types of value parameters in type?
+		add l r :: (l, r) -> Widen[l, r].Result
+	
+	map :: [GenericCollection => List[A], E, Callable[E] => Func: ](list: List[E], func)
+	
+	Allow a way to specify the type of a single specific parameter
+		map[GenericCollection => List[A], E] list:List[E] func
+		
+	map (list, func) :: [List[A]: GenericCollection, E, Func] List[E] -> Func
+	{
+		result: List
+		
+		for(element: list)
+			result.add(func(element))
+		
+		return result
+	}
+
+		field :: Struct.constructor?
+		
+		# Allow data constructors here?
+		field :: Tree
+		field :: Leaf
+	
+	
