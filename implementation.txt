@@ -33,3 +33,6 @@ For typeclass constraints
 		Create a correction map to use when modifiying constraints
 		
 	How to deal with typeclass instances with typeclass constraints themselves?
+	
+Turn temporary variables into lvalue references
+	Let them represent identity, not values

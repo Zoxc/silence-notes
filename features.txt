@@ -640,12 +640,78 @@ Typeclass views
 	
 	Have 'var' keep it's type variable on unification. Keep a list of type variable and type pairs to actually unify after resolving fields, but before context reduction
 		
+Copy operator and destructor not suitable as typeclasses since all types would provide an instance for it.
+		
 Typeclass choices
 	Do as much context reduction as possible with the type class instances in scope
 		Only generate an error on ground types
 		
 	Allow typeclass instances to overlap only with other instances in it's module
+	
+Semantics of assignment operator
+	<lhs> = <rhs>
+		eval(out temp , rhs)
+		destroy(lhs)
+		copy(out lhs, temp)
+	
+	Compiler is allowed to optimize it to:
+		destroy(lhs)
+		eval(out lhs, rhs)
 		
+		If it can show that lhs does not occur in rhs.
+	
+	It's also allowed to optimize it to:
+		eval(out temp, rhs)
+		destroy(lhs)
+		memcpy(out lhs, temp)
+		move_fixup(lhs)
+		
+		If the type implements a move operator.
+		
+	<lhs> += <rhs>
+		copy(out temp1, lhs)
+		destroy(lhs)
+		eval(out temp2, rhs)
+		add(out lhs, temp1, temp2)
+	
+	Compiler is allowed to optimize it to:
+		memcpy(out temp1, lhs)
+		move_fixup(temp1)
+		eval(out temp2, rhs)
+		add(out lhs, temp1, temp2)
+		
+		If the type implements a move operator.
+		
+	Another way to avoid copies would be to create another copy of the variable when assigning:
+		Turn:
+			m = 2
+			m += 1
+		
+		Into:
+			m1 = 2
+			m2 = m1 + 1
+			
+		Only works when m must not have a fixed location
+		Doesn't play well with loops
+		
+	Require all types to be both copyable and movable?
+		Infer both operator by default
+		
+	Some of the optimizations are invalidated by exceptions
+	
+Add explicit reference types for structs/unions.
+	Struct doesn't need to implement move/copy operations since those would only copy it's reference.
+	Unions can allocate storage per-case only
+	Opaque structs would be reference types
+	
+	Steal a page from D and have require that non-reference don't refer to themselves?
+		Yes, simplifies code generation!
+		
+	How does this impact constructors, new/delete?
+	
+Use a ref-count wrapper class for function types?
+	Explicit construction and destruction required otherwise?
+	
 Circular dependency
 	struct Unit
 	
