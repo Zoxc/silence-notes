@@ -33,6 +33,73 @@ For typeclass constraints
 		Create a correction map to use when modifiying constraints
 		
 	How to deal with typeclass instances with typeclass constraints themselves?
+
+Allow construction of non-copyable types by not requiring Copy typeclass on the initial assignemnt
+	.var = Type("hello")
+	var = Type("another") # not allowed if Type doesn't implement Copy
 	
-Turn temporary variables into lvalue references
-	Let them represent identity, not values
+	.var2 = var # needs to handle this case. Make plain references require Copy?
+		Does not allowing plain references handle all the cases when types might be copied?
+		If so, 'var = Type("another")' could be allowed since it's not really a copy
+		Does it handle return values? - No, return Type("Hm") would be allowed. It also doesn't generate an error when defining functions.
+			Solved by making return and arguments of functions require Copy
+			Handles the case of func(Type("hm")) too
+			
+			Return values doesn't have to be copyable.
+			
+			func()
+				return Type("hello")
+			.var = func()
+			
+			The object is never copied.
+			
+	Which values needs to have a Copyable type?
+		Arguments passed to function applications (Callable typeclass can require this)
+		Plain references to variables
+			When the * or & operators are used this is not required
+		The result of the * operator must be copyable, except when it's on the left hand side of assignment
+		The result of the [] operator have to be copyable, except when it's on the left hand side of assignment
+		
+	Which values needs to have a Sizable type (not a opaque type)?
+		Literals (already have a typeclass which can require Sizable)
+		Variables/fields (would this be handled by the Constructable typeclass?)
+		
+		Constructor results (Constructable typeclass would require Sizable)
+			Actually only the () operator which creates objects on the stack requires Sizable.
+		
+		The result of the * operator
+		Function return values
+		
+	Copyable implies Sizable?
+		
+		Implement Copyable and Sizable by an integer on type variables.
+			0 - Nothing
+			1 - Sizable
+			2 - Copyable and sizable
+			
+		On unification
+			The highest value between two type variables are used.
+			Checks that fixed types implements the right typeclasses
+			
+		Turn them into proper typeclass constraint when type inference is done
+		
+	Handle errors about Sizable and Copyable at the code generation stage?
+		- No mess with typeclasses (so it's more efficient)
+		- No need to infer typeclass constraint as much
+		- Less friendly error messages
+		
+		Yes
+
+	Do this not with type classes, but with flags on types
+	Type parameters will need the same handling as type variables
+	
+	Add a level lower than Nothing for use with union type data constructors which can only be passed on to other type constructors?
+		Investigate, but might be complex and not worth it
+		
+Add an Types::Error class which unifies and goes through type inference without causing further errors.
+
+Have a stack of variables and free them when generating a return?
+Make new_var return a new variable inside a block and delete it before returning
+
+Move the type assignment of convert.var to the new_var call, make convert.var a simple string?
+	

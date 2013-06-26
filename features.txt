@@ -459,27 +459,6 @@ immutable + read-only = immutable
 Have a function for volatile writes/reads?
 	volatile[T](in: *T, out: *T) -> ()
 	
-Copyable typeclass and copy function?
-	class Copyable T
-		copy()
-	
-	new_copy(in: Copyable) -> *in
-		r := C.alloc(sizeof in)
-		memcpy(r, &in, sizeof in)
-		r.copy()
-		return r
-	
-	struct Foo
-	{
-		field: *Struct
-		
-		instance Copyable
-			copy()
-				field = new_copy *field
-	}
-	
-	All types are Copyable. This just provides an special implementation.
-	
 Store a name for Types::Variable
 
 Use another syntax for contraints on type parameters than value parameters?
@@ -616,6 +595,8 @@ Have *[type] be a custom wrapper type PtrArray[type] which implements the [] ope
 
 	Construct:
 	.var = (~int)(32)
+		Should use the 'new' function
+			new[~int](32)
 	
 Syntaxes for ptr array wrapper types and fixed size arrays?		
 	Ptr * int
@@ -704,10 +685,72 @@ Add explicit reference types for structs/unions.
 	Unions can allocate storage per-case only
 	Opaque structs would be reference types
 	
+	Quite ugly and adds special cases for references/pointers
+	
 	Steal a page from D and have require that non-reference don't refer to themselves?
 		Yes, simplifies code generation!
 		
 	How does this impact constructors, new/delete?
+	
+	No, track which types are opaque, sizable and copyable instead
+	
+RefCount wrapper:
+	class Constructor T
+		type Constructed
+		type Args Tuple
+		
+		shared size uint
+		
+		shared construct(obj *Constructed, args Args) -> unit
+		
+	data ref case Maybe T
+		when Just
+			field T
+		when Nothing
+		
+	instance[T] Constructor Just[T]
+		type Constructed = Maybe T
+		type Args = Cell[T, ()]
+		size()
+			return sizeof(T)
+			
+	data RefC T, A Allocator
+		data Header
+			refs uint
+			alloc_ref A.Ref
+			
+		ref *Header
+		
+	class RefType T, A Allocator
+		type Contained
+		type Header
+		shared construct(obj *Header, alloc_ref A.Ref)
+	
+	instance[T, A] RefType *T, A
+		type Contained = T
+		type Header = unit
+		shared construct(obj *unit, alloc_ref A.Ref)
+	
+	instance[T, A] RefType RefC[T, A], A
+		type Contained = T
+		type Header = RefC[T, A].Header
+		shared construct(obj *Header, alloc_ref A.Ref)
+			Constructor[Header].construct(obj, (0, alloc_ref))
+	
+	new[T Constructor, Result, Args]([args T.Args]) -> Result where R = T.Constructed, RT = RefType[Result, StdAlloc]
+		.obj = ptr_cast C.malloc(sizeof RT.Header + T.size)
+		RT.construct(obj, StdAlloc.ref())
+		.result = ptr_cast ptr_inc(obj, 1)
+		T.construct(obj, args)
+		return obj
+	
+	delete[Input](obj Input) where RT = RefType[Input, StdAlloc], T = RT.Contained, RefDestructable[Input]
+		(*obj).destruct()
+		C.free(obj)
+		
+	Use new/delete for pointers only, and add a new_ref for more advanced things which won't need delete?
+
+Use a separate syntax for types and values but allow type AST passed in type parameters to be able to evaluate to values as much as possible?
 	
 Use a ref-count wrapper class for function types?
 	Explicit construction and destruction required otherwise?
@@ -735,6 +778,61 @@ Circular dependency
 		- Do the same as the first solution, only require that the programmer explicitly marks Tuple in Cell with a keyword.
 
 
+Allow construction of non-copyable types by not requiring Copy typeclass on the initial assignemnt
+	Do this not with type classes, but with flags on types
+	Type parameters will need the same handling as type variables
+	
+struct RegCounted T
+	How does this work with opaque types with constructors?
+	
+	Needs to add a refcount field to the types
+		Do this by wrapping the Constructor typeclass increasing size allocated?
+		
+Implement size_of and type_of as builtins?
+	size_of[T]() -> uint
+	
+	struct type_of[val :: type, type]
+		Forces val to be executed, so no.
+
+Have DefConstructor implemented for Vector<T, Stdalloc>, or more generally for any allocator without state
+
+Separate grammar for types and expressions 
+	use () for specialization for types?
+		allow : for specialization in types too to avoid confusion?
+		frees [] for fixed size arrays
+	
+	specialization syntax for expression:
+		.a *Maybe(Int) = new:Just 3
+		
+	keyword/syntax for converting a value to type?
+		Type(`Pair(1, 2))
+		
+Tuple field reference syntax?
+	a = (1, true)
+	a.0 :: int
+	a.1 :: bool
+	
+In constructors, fields appearing in lvalues are assumed initialized.
+Every other field gets constructed with the default values.
+All fields are assumed initialized if 'self' appears in an lvalue
+
+A implicit constructor for structs is generated when all constraints of the form:
+		Defaultable[field_0]
+		Defaultable[field_1]
+		...
+		Defaultable[field_n]
+	reduces without an error
+	
+Two Index operator typeclasses?
+	One for assignment and one for reading?
+	
+Don't allow implict generalization, require explicit type parameters?
+
+Allow 3 different modes of typeclasses
+	Instances must be defined in the same module as the typeclass (required for Tuple)
+	Instances must be defined in the same module as a type parameter (useful for Defaultable and Constructor)
+	Instances can be defined anywhere
+	
 http://www.codeproject.com/Articles/192825/Bird-Programming-Language-Part-1
 http://parasail-programming-language.blogspot.no/
 http://nimrod-code.org/question.html

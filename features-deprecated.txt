@@ -25,58 +25,6 @@ Implement Callable on string types so you can do:
 		
 	No - Probably doesn't improve readability
 	
-Allow construction of non-copyable types by not requiring Copy typeclass on the initial assignemnt
-	.var = Type("hello")
-	var = Type("another") # not allowed if Type doesn't implement Copy
-	
-	.var2 = var # needs to handle this case. Make plain references require Copy?
-		Does not allowing plain references handle all the cases when types might be copied?
-		If so, 'var = Type("another")' could be allowed since it's not really a copy
-		Does it handle return values? - No, return Type("Hm") would be allowed. It also doesn't generate an error when defining functions.
-			Solved by making return and arguments of functions require Copy
-			Handles the case of func(Type("hm")) too
-			
-			Return values doesn't have to be copyable.
-			
-			func()
-				return Type("hello")
-			.var = func()
-			
-			The object is never copied.
-			
-	Which values needs to have a Copyable type?
-		Arguments passed to function applications (Callable typeclass can require this)
-		Plain references to variables
-			When the * or & operators are used this is not required
-		The result of the * operator must be copyable, except when it's on the left hand side of assignment
-		The result of the [] operator have to be copyable, except when it's on the left hand side of assignment
-		
-	Which values needs to have a Sizable type (not a opaque type)?
-		Literals (already have a typeclass which can require Sizable)
-		Variables/fields (would this be handled by the Constructable typeclass?)
-		Constructor results (Constructable typeclass would require Sizable)
-		The result of the * operator
-		
-	Copyable implies Sizable?
-		
-		Implement Copyable and Sizable by an integer on type variables.
-			0 - Nothing
-			1 - Sizable
-			2 - Copyable and sizable
-			
-		On unification
-			The highest value between two type variables are used.
-			Checks that fixed types implements the right typeclasses
-			
-		Turn them into proper typeclass constraint when type inference is done
-		
-	Handle errors about Sizable and Copyable at the code generation stage?
-		- No mess with typeclasses (so it's more efficient)
-		- No need to infer typeclass constraint as much
-		- Less friendly error messages
-		
-		Yes
-
 Use whitespace for indentation? Yes
 	Lexer generates START_BLOCK and STOP_BLOCK tokens? IDENT_CHANGE tokens?
 	Emit error about whitespace/tab conflict to the parser which can ignore them they don't matter? (for say put(1, \n 2))
@@ -286,5 +234,27 @@ More Haskell like syntax: - No
 		# Allow data constructors here?
 		field :: Tree
 		field :: Leaf
+	
+Copyable typeclass and copy function?
+	class Copyable T
+		copy()
+	
+	new_copy(in: Copyable) -> *in
+		r := C.alloc(sizeof in)
+		memcpy(r, &in, sizeof in)
+		r.copy()
+		return r
+	
+	struct Foo
+	{
+		field: *Struct
+		
+		instance Copyable
+			copy()
+				field = new_copy *field
+	}
+	
+	All types are Copyable. This just provides an special implementation.
+		Using typeclasses for special implementation isn't a good idea
 	
 	
