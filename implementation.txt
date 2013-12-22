@@ -6,6 +6,10 @@ Replace Types::Variable with type parameters in some way.
 	
 	How to do this with nested type parameters?
 	
+Move node lists into AST::Program/Complex/Function and out of AST::Scope
+
+Make ctype.type be RefHigher for type constructors
+	
 Sort typeclass contraints by the address of the typeclass to make it easier to find duplicates.
 
 In the string table implementation:
