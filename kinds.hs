@@ -35,23 +35,37 @@ data Object
 	
 -- Simple, no value type parameters
 
+-- TypeParam must be an Object and not it's own type so you can apply higher-kinded type parameters. A dictionary also requires TypeParameters as values, so it must also be an Object.
+
 data Type
-	Param TypeParam       -- Explicit type parameter
-	Applied Object [Type] -- Monomorphic types have an empty list
+	when Applied
+		obj *Object
+		args List[*Type] -- Monomorphic types have an empty list
 
 data Kind
-	AnyType
-	Higher [Kind] Kind
+	when Any
+	when Higher
+		params List[*Object] -- List of TypeParams or Kinds?
+		kind *Kind
 	
-data TypeParam
-	TypeParam Name Kind
-
 data Object
-	Struct [TypeParam]
-	Var Type [TypeParam]
+	name String
+	kind *Kind
+	when TypeParam
+		kind *Kind
+	when Struct
+		args List[*Object] -- List of TypeParam
+	when Var
+		type *Type
+		args List[*Object] -- List of TypeParam
 
-data InferenceResult
-	ValueResult Type
-	TypeResult Type
-	KindResult Object -- Convert to TypeResult on demand
+data Result
+	when Value
+		type *Type
+	when Type
+		type *Type
+	when Unknown  -- Convert to Result.Type/Value on demand
+	 			  -- Can refer to typeclasses
+		obj *Object
+		args List[*Type] -- Type parameters to the parents of obj
 	

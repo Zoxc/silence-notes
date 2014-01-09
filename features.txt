@@ -789,7 +789,7 @@ struct RegCounted T
 		Do this by wrapping the Constructor typeclass increasing size allocated?
 		
 Implement size_of and type_of as builtins?
-	size_of[T]() -> uint
+	size_of[T Sizable]() -> uint
 	
 	struct type_of[val :: type, type]
 		Forces val to be executed, so no.
