@@ -106,4 +106,19 @@ Have a stack of variables and free them when generating a return?
 Make new_var return a new variable inside a block and delete it before returning
 
 Move the type assignment of convert.var to the new_var call, make convert.var a simple string?
+
+Create a wrapper for type maps used in Types::Ref which implements it as a linear array with the keys stored linearly in the object
 	
+
+For compile-time expressions:
+	Create a new type:
+		when ValueAsType -- Value passed as a type (in fixed size arrays for example)
+			val *Value
+		when DeferredValueAsType
+			ast *AST
+			type_params Map[*Object, *Type?] -- Required type parameters to evalute the AST
+
+	On creation and inst_type when all type_parameters are given evalute the DeferredValueAsType and replace it with ValueAsType
+
+	Use the same fields as code generation when evaluating
+

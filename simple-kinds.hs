@@ -21,14 +21,22 @@ data TypeclassLimit
 data TypeContext
 	limits List[*TypeclassLimit]
 
+data Kind
+	when Type
+	when Value
+
+
 data Object
 	name String
 	params List[*Object] -- List of TypeParams. Empty means no type parameters are required
 	ctx TypeContext -- It's limits should be empty when there are no type parameters (It might have entries if any parent has type parameters)
+	type *Type
+	scope *Scope? -- TypeParam and Var needs a scope to declare type parameters in. Struct and Typeclass always gets a scope
 	when TypeParam
+		value bool
 	when Struct
+	when Typeclass
 	when Var
-		type *Type
 
 data Result
 	when Value

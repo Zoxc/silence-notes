@@ -832,7 +832,11 @@ Allow 3 different modes of typeclasses
 	Instances must be defined in the same module as the typeclass (required for Tuple)
 	Instances must be defined in the same module as a type parameter (useful for Defaultable and Constructor)
 	Instances can be defined anywhere
+
+Name smart reference class Rc
 	
+Have string literals of length 1 be of the typeclass CharLiteral and implement CharLiteral for all StringLiterals
+
 Make ? into a binary operator? (http://mortoray.com/2013/07/14/rejuvenating-the-ternary-conditional-with-optionals/ ) - http://leaflang.org
 	
 http://www.codeproject.com/Articles/192825/Bird-Programming-Language-Part-1
