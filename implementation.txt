@@ -122,3 +122,4 @@ For compile-time expressions:
 
 	Use the same fields as code generation when evaluating
 
+http://llvm.lyngvig.org/Articles/Mapping-High-Level-Constructs-to-LLVM-IR

@@ -828,6 +828,16 @@ Two Index operator typeclasses?
 	
 Don't allow implict generalization, require explicit type parameters?
 
+Try to make the size of allocated (ref) types depend on the construction parameters? Would allow inline variable sized arrays
+
+undef function which can create any (sizable) type
+	construct(var *T, in T) function which moves the type without destroying var first, so you can still construct variables used with undef later on, might also be used in constructors
+
+Import external C function with a single function? import[char[] name, Args Tuple, Result] Args -> Result
+	Same for export?
+		 export[char[] name, func *(Args -> Result), Args Tuple, Result]()
+		 How to make sure export is generated?
+
 Allow 3 different modes of typeclasses
 	Instances must be defined in the same module as the typeclass (required for Tuple)
 	Instances must be defined in the same module as a type parameter (useful for Defaultable and Constructor)
@@ -838,7 +848,17 @@ Name smart reference class Rc
 Have string literals of length 1 be of the typeclass CharLiteral and implement CharLiteral for all StringLiterals
 
 Make ? into a binary operator? (http://mortoray.com/2013/07/14/rejuvenating-the-ternary-conditional-with-optionals/ ) - http://leaflang.org
+
+Drop when in match statements
+	match p
+		Just
+			p.val.run()
+		else
 	
+
+Use () for indexing too
+	Introduce a variant of function application which works as a lvalue, so array(4) = true would work
+
 http://www.codeproject.com/Articles/192825/Bird-Programming-Language-Part-1
 http://parasail-programming-language.blogspot.no/
 http://nimrod-code.org/question.html

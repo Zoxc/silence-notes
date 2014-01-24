@@ -21,11 +21,6 @@ data TypeclassLimit
 data TypeContext
 	limits List[*TypeclassLimit]
 
-data Kind
-	when Type
-	when Value
-
-
 data Object
 	name String
 	params List[*Object] -- List of TypeParams. Empty means no type parameters are required
