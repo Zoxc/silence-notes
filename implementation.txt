@@ -99,6 +99,8 @@ Allow construction of non-copyable types by not requiring Copy typeclass on the 
 	
 	Add a level lower than Nothing for use with union type data constructors which can only be passed on to other type constructors?
 		Investigate, but might be complex and not worth it
+
+Have a separate type tree for code generation which can only have fixed types
 		
 Add an Types::Error class which unifies and goes through type inference without causing further errors.
 

@@ -30,3 +30,6 @@ Use whitespace for indentation? Yes
 	Use an counter for disabling whitespace?
 	Have scopes of blocks where "if a > 1" creates a new one based on the indentation the line it's on? Fall back to the old scope when done
 	A process that skips all lines/comments at the start of a file and finds the first line with content. Use the indentation of that as the global scope indentation
+
+Use () for indexing too
+	Introduce a variant of function application which works as a lvalue, so array(4) = true would work

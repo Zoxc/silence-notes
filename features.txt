@@ -714,34 +714,47 @@ RefCount wrapper:
 		size()
 			return sizeof(T)
 			
+	class RefType T
+		type Contained
+		shared construct[A](obj *Object, allocator A) -> *Contained
+	
+	instance[T] RefType *T
+		type Contained = T
+		shared construct[A](obj *T, allocator A) -> T
+			return obj
+
+	
 	data RefC T, A Allocator
 		data Header
 			refs uint
-			alloc_ref A.Ref
+			alloc A
 			
 		ref *Header
 		
-	class RefType T, A Allocator
-		type Contained
-		type Header
-		shared construct(obj *Header, alloc_ref A.Ref)
-	
-	instance[T, A] RefType *T, A
+	instance[T, A] RefType RefC[T, A]
 		type Contained = T
-		type Header = unit
-		shared construct(obj *unit, alloc_ref A.Ref)
+		type Object = RefC[T, A].Header
+		shared construct[A](obj *Object, allocator A)
+			Constructor[Object].construct(obj, (0, allocator, undef()))
+			return &obj.obj
+
+		shared make(obj *Object)
+			return RefC[T, A](obj)
 	
-	instance[T, A] RefType RefC[T, A], A
-		type Contained = T
-		type Header = RefC[T, A].Header
-		shared construct(obj *Header, alloc_ref A.Ref)
-			Constructor[Header].construct(obj, (0, alloc_ref))
+	allocate[T, Ref](args Constructor[T].Args, allocator A) -> Ref where R = T.Constructed, RT = RefType[Result, StdAlloc]
+		.obj *RefType[Ref].Object = ptr_cast allocator.alloc(sizeof[RefType[Ref].Object]())
+		RefType[Ref].construct(obj, allocator)
+		return RefType[Ref].make(obj)
 	
+	delete[Input](obj Input) where RT = RefType[Input, StdAlloc], T = RT.Contained, RefDestructable[Input]
+		(*obj).destruct()
+		C.free(obj)
+		
 	new[T Constructor, Result, Args]([args T.Args]) -> Result where R = T.Constructed, RT = RefType[Result, StdAlloc]
 		.obj = ptr_cast C.malloc(sizeof RT.Header + T.size)
 		RT.construct(obj, StdAlloc.ref())
 		.result = ptr_cast ptr_inc(obj, 1)
-		T.construct(obj, args)
+		T.construct(result, args)
 		return obj
 	
 	delete[Input](obj Input) where RT = RefType[Input, StdAlloc], T = RT.Contained, RefDestructable[Input]
@@ -770,12 +783,14 @@ Circular dependency
 	
 	We get an recursion error here when trying to find the type of Cell.
 	It gets a Tuple[Rest] constraint. During context reduction it tries to resolve this constraint.
-	It evaluates all the instances. The second one requires the type of TypeCell to be known and
+	It evaluates all the instances. The second one requires the type of Cell to be known and
 	we have a circular dependency.
 	
 	Possible solutions:
 		- Don't try to find an instance of Tuple in Cell. The programmer have marked that to be a typeclass so it's unlikely an instance is available.
 		- Do the same as the first solution, only require that the programmer explicitly marks Tuple in Cell with a keyword.
+
+		- DO: Instances shouldn't inherit typeclass constraints (Only avoids recursive typeclass instance resolving)
 
 
 Allow construction of non-copyable types by not requiring Copy typeclass on the initial assignemnt
@@ -855,9 +870,33 @@ Drop when in match statements
 			p.val.run()
 		else
 	
+Handle indentation better
+	These should all work:
+		// Handle it by making the baseline of if it's position and not the start of the line if inside a bracket
+		// Needs to know size of tab to match!
+		return (if true
+					false
+				else
+					true)
 
-Use () for indexing too
-	Introduce a variant of function application which works as a lvalue, so array(4) = true would work
+		// Handle this by making the 'if' block deindent if the indent falls by a level and not to the baseline
+		// Do that only if the 'if' keyword is at the start of the line?
+		return if true
+				false
+			else
+				true
+
+		return if true
+		       	   false
+		       else
+		       	   true
+
+		return if true
+			false
+		else
+			true
+
+Make a struct sizable if it has no copy action instead of using struct ref
 
 http://www.codeproject.com/Articles/192825/Bird-Programming-Language-Part-1
 http://parasail-programming-language.blogspot.no/
